@@ -6,7 +6,7 @@ modelname = '../../TempData/modelfit_session.mat';
 if exist(modelname, 'file')
     xfit = W.load(modelname);
 else
-    xfit = {};
+    xfit = cell(1, length(games));
 end
 parfor gi = 1:length(games)
     RLopt = S_RL;
@@ -16,21 +16,14 @@ parfor gi = 1:length(games)
     g.action = 1 + g.choice; % 2 - accept, 1 - reject
     g.is_yellow_1st = strcmp(g.cue1, 'yellow');
     RLopt.load_data(g);
-    % model - base
-    %     if ~isfield(xfit{gi}, 'model_base') || xfit{gi}.model_base.LL < -500
-    model = model_base;
-    xfit{gi}.model_base = RLopt.train(model);
-    %     end
-    % model - basic + YP
-    %     if ~isfield(xfit{gi}, 'model_YP') || xfit{gi}.model_YP.LL < -500
-    model = model_YP;
-    xfit{gi}.model_YP = RLopt.train(model);
-    %     end
-    % model - YP time
-    %     if ~isfield(xfit{gi}, 'model_YP_time') || xfit{gi}.model_YP_time.LL < -500
-    model = model_YP_time;
-    xfit{gi}.model_YP_time = RLopt.train(model);
-    %     end
+    models = ["Model1", "Model1t", "Model2", "Model2t", "Model3", "Model3t"];
+    for modeli = 1:length(models)
+        model = models(modeli);
+        if length(xfit) < gi || ~isfield(xfit{gi}, model) || xfit{gi}.(model).LL < -500
+            md = eval(model);
+            xfit{gi}.(model) = RLopt.train(md);
+        end
+    end
 end
 %% check model fits
 W.cellfun_vertcat(@(x)[x.model_base.LL, x.model_YP.LL, x.model_YP_time.LL], xfit)

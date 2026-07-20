@@ -1,6 +1,6 @@
-classdef model_YP < S_RL_model
+classdef Model2 < S_RL_model
     methods
-        function obj = model_YP()
+        function obj = Model2()
             obj.name = "YP";
             obj.name_parameters = {'beta', 'k', 'thres', 'biasYP'};
             obj.X0 = [NaN, NaN, 0, 0];

@@ -1,6 +1,6 @@
-classdef model_base < S_RL_model
+classdef Model1t < S_RL_model
     methods
-        function obj = model_base()
+        function obj = Model1t()
             obj.name_parameters = {'beta', 'k', 'thres'};
             obj.X0 = [NaN, NaN, 0];
             NMAX = inf;
@@ -10,10 +10,13 @@ classdef model_base < S_RL_model
         function [cp, LV] = policy(obj, params, LV, data)
             D = data.delay;
             R = data.drop;
-            DV = R/(1 + params.k * D);
-            cp = W_RL.softmax_binary(params.thres, DV, params.beta);
-            % cp = 1./(1 + exp(-params.beta * DV - params.thres));
-            % cp = [1-cp, cp];
+            k = params.k;
+            VF = params.thres;
+            func = @(R, D) R/(1 + k * D);
+            DV = func(R, D);
+            V2 = VF;
+            V1 = DV + func(VF, D);
+            cp = W_RL.softmax_binary(V2, V1, params.beta);
             LV.DV = DV;
         end
     end

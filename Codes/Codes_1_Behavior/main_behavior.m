@@ -6,8 +6,11 @@ modelname = '../../TempData/modelfit_session.mat';
 if exist(modelname, 'file')
     xfit = W.load(modelname);
 else
-    xfit = cell(1, length(games));
+    xfit = cell(length(models), length(games));
 end
+models = ["Model1", "Model1t", "Model2", "Model2t", "Model3", "Model3t"];
+nmodel = length(models);
+funcs = W.arrayfun(@(x)str2func(x), models);
 parfor gi = 1:length(games)
     RLopt = S_RL;
     RLopt.setup_optimizer('fmincon', 'repeat', 1, 'bound_inf', 20);
@@ -16,49 +19,35 @@ parfor gi = 1:length(games)
     g.action = 1 + g.choice; % 2 - accept, 1 - reject
     g.is_yellow_1st = strcmp(g.cue1, 'yellow');
     RLopt.load_data(g);
-    models = ["Model1", "Model1t", "Model2", "Model2t", "Model3", "Model3t"];
-    for modeli = 1:length(models)
-        model = models(modeli);
-        if length(xfit) < gi || ~isfield(xfit{gi}, model) || xfit{gi}.(model).LL < -500
-            md = eval(model);
-            xfit{gi}.(model) = RLopt.train(md);
+    for modeli = 1:nmodel
+        if isempty(xfit{modeli, gi}) || xfit{modeli, gi}.LL < -500
+            md = feval(funcs{modeli});
+            xfit{modeli, gi} = RLopt.train(md);
         end
     end
 end
-%% check model fits
-W.cellfun_vertcat(@(x)[x.model_base.LL, x.model_YP.LL, x.model_YP_time.LL], xfit)
-%% save model
 W.save(modelname, 'xfit', xfit);
+% %% check model fits
+% W.cellfun_vertcat(@(x)[x.model_base.LL, x.model_YP.LL, x.model_YP_time.LL], xfit)
 %% train model overall
-animals = ["S","S","S","T","T","T"];
-models = ["model_base", "model_YP", "model_YP_time","model_base", "model_YP", "model_YP_time"];
-xfit = cell(1,6);
-W.parpool(6);
-reps = [1:6];
-parfor repi = 1:6
-    if ismember(repi, reps)
-        animal = animals(repi);
-        md = models(repi);
-        xfit{repi}.animal = animal;
-        xfit{repi}.modelname = md;
-        g = vertcat(games{ani_gm.animal == animal});
-
-        RLopt = S_RL;
-        RLopt.setup_optimizer('fmincon', 'repeat', 2, 'bound_inf', 20);
-        g.reward = zeros(size(g,1),1);
-        g.action = 1 + g.choice; % 2 - accept, 1 - reject
-        g.is_yellow_1st = strcmp(g.cue1, 'yellow');
-        RLopt.load_data(g);
-        switch md
-            case "model_base"
-                model = model_base;
-                xfit{repi}.model_base = RLopt.train(model);
-            case 'model_YP'
-                model = model_YP;
-                xfit{repi}.model_YP = RLopt.train(model);
-            case 'model_YP_time'
-                model = model_YP_time;
-                xfit{repi}.model_YP_time = RLopt.train(model);
+animals = ["S","T"];
+nanimal = length(animals);
+models = ["Model1", "Model1t", "Model2", "Model2t", "Model3", "Model3t"];
+nmodel = length(models);
+xfit = cell(nmodel, nanimal);
+for ai = 1:nanimal
+    animal = animals(ai);
+    g = vertcat(games{ani_gm.animal == animal});
+    RLopt = S_RL;
+    RLopt.setup_optimizer('fmincon', 'repeat', 2, 'bound_inf', 20);
+    g.reward = zeros(size(g,1),1);
+    g.action = 1 + g.choice; % 2 - accept, 1 - reject
+    g.is_yellow_1st = strcmp(g.cue1, 'yellow');
+    RLopt.load_data(g);
+    parfor modeli = 1:nmodel
+        if isempty(xfit{modeli, ai}) || xfit{modeli, ai}.LL < -500
+            md = feval(funcs{modeli});
+            xfit{modeli, ai} = RLopt.train(md);
         end
     end
 end

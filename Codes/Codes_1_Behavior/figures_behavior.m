@@ -3,7 +3,7 @@ session = data.cue{1}.info_session.info_combinedsessions;
 gs = data.cue{1}.games;
 gs = {gs(session.animal == "S"), gs(session.animal == "T")};
 xfit = W.load('../../TempData/modelfit_overall');
-params = {xfit{1}.model_base.params_table, xfit{4}.model_base.params_table};
+params = {xfit{1}.params_table, xfit{4}.params_table};
 %% compute choice curve, and condition means
 gs_all = {vertcat(gs{1}{:}), vertcat(gs{2}{:})};
 c0 = W.cellfun_vertcat(@(g)W.cond_average_tab(g, 'condition', 'choice'), gs_all);
@@ -64,14 +64,16 @@ plt.update('behavior');
 W.save('../../TempData/behavior_pYP', 'ps', ps);
 %% model comparison
 d = W.load('../../TempData/modelfit_session');
-aic = W.cellfun_horzcat(@(x)[x.model_base.aic;x.model_YP_time.aic;x.model_YP.aic], d);
+aic = W.cellfun(@(x)x.aic, d);
 % bic = W.cellfun_horzcat(@(x)[x.model_base.bic;x.model_YP_time.bic;x.model_YP.bic], d);
+%%
 plt.figure(2,2);
-xname = {'base', 'YP time', 'YP'};
+xname = ["Model1", "Model1t", "Model2", "Model2t", "Model3", "Model3t"];
 animals = ["S", "T"];
 for ai = 1:2
     id = session.animal == animals(ai);
-    plt = S_fig.plt_model_comparison(plt, aic(:, id)', 'AIC', xname, ai, 2+ai);
+    plt.ax(ai,1);
+    plt = S_fig.plt_model_comparison(plt, aic(:, id)', 'AIC', xname);
     % plt = S_fig.plt_model_comparison(plt, bic(:, id)', 'BIC', xname, 2, 4);
 end
 plt.setfig([1 2], 'title', {'Monkey 1', 'Monkey 2'});

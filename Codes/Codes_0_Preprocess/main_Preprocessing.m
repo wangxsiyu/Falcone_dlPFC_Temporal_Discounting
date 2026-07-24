@@ -1,3 +1,5 @@
+% codex comment: hello world
+% hello again
 looper = S_looper_folder('../../Data/');
 jobs = S_jobs();
 jobs.set_loopers({'folder'}, {looper});

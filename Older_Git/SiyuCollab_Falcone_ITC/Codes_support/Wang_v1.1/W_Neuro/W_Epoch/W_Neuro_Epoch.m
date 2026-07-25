@@ -1,2 +1,0 @@
-classdef W_Neuro_Epoch < W_Neuro_Epoch_SpikeBinning & W_Neuro_Epoch_SpikeTrains
-end

@@ -1,6 +1,0 @@
-classdef S_plt_executor < S_plt_executor_plot & ...
-        S_plt_executor_scatter & ...
-		S_plt_executor_stats
-    methods
-    end
-end

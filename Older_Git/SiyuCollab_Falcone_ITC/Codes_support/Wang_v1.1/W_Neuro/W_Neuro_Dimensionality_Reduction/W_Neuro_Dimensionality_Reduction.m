@@ -1,3 +1,0 @@
-classdef W_Neuro_Dimensionality_Reduction < W_Neuro_PCA & ...
-        W_Neuro_projection
-end

@@ -1,4 +1,8 @@
+%%
 main_1_fitRL;
 %%
-plt = S_plt('../fig.yml');
+main_2_computeDV;
 %%
+plt = SW_plt_from_yml('../fig.yml');
+%%
+main_3_figureRL;

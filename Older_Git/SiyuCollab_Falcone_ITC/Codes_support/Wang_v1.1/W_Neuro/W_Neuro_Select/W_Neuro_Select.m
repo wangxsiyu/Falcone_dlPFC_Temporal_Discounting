@@ -1,3 +1,0 @@
-classdef W_Neuro_Select < W_Neuro_Select_Subsets & ...
-        W_Neuro_Select_SignificantCells
-end

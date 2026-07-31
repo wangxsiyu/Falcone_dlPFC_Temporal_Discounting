@@ -1,17 +1,22 @@
-function main_coding_dimensions(cue_or_go, savename)
+function coding_dimensions_dropdelay(cue_or_go, savename, isscale, windowEdges, varargin)
+    % rng(seed, 'twister');
+    if ~exist('isscale', 'var') || isempty(isscale)
+        isscale = true;
+    end
     %% Compute cross-validated beta coefficients
-    windowEdges = [-250 0; 0 250; 250 500; 500 750; 750 1000];
+    if ~exist('windowEdges', 'var') || isempty(windowEdges)
+        windowEdges = [-250 0; 0 250; 250 500; 500 750; 750 1000];
+    end
     windowLabels = compose('%d to %d ms', ...
         windowEdges(:, 1), windowEdges(:, 2));
     nWindows = size(windowEdges, 1);
     animalNames = ["Monkey S",    "Monkey T"];
     nAnimals = numel(animalNames);
     
-    kfold = 2;
     minimumTrialsPerCondition = 10;
+    kfold = 2;
     nPseudoTrialsPerCondition = 100;
     factorNames = {'drop', 'delay', 'choice'};
-    
     coding = W.struct( ...
         'window_edges', windowEdges, ...
         'window_labels', windowLabels, ...
@@ -55,6 +60,11 @@ function main_coding_dimensions(cue_or_go, savename)
             averageWithinWindows(x, timeMasks), tr.cells);
         te.cells = W.cellfun(@(x) ...
             averageWithinWindows(x, timeMasks), te.cells);
+
+        % if isscale
+        %     tr.cells = W.cellfun(@(x) (x - mean(x))./std(x), tr.cells);
+        %     te.cells = W.cellfun(@(x) (x - mean(x))./std(x), te.cells);
+        % end
     
         % Keep the time metadata consistent with the five averaged columns.
         windowCenters = mean(windowEdges, 2)';
@@ -66,10 +76,10 @@ function main_coding_dimensions(cue_or_go, savename)
     
         anv1 = W.anovan_slidingwindow( ...
             tr, tr.games, factorNames, ...
-            'continuous', [1 2], 'is_normalize', false);
+            'continuous', [1 2], varargin{:}, 'is_normalize', isscale);
         anv2 = W.anovan_slidingwindow( ...
             te, te.games, factorNames, ...
-            'continuous', [1 2], 'is_normalize', false);
+            'continuous', [1 2], varargin{:}, 'is_normalize', isscale);
         W.print_mute_off;
     
         ncell = length(tr.cells);

@@ -1,1 +1,1 @@
-W_version('1.1.0')
+W_version_archived('1.1')

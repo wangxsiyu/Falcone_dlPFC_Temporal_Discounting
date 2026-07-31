@@ -8,12 +8,13 @@ models = ["Model1", "Model1t", "Model2", "Model2t", "Model3", "Model3t"];
 nmodel = length(models);
 if exist(modelname, 'file')
     xfit = W.load(modelname);
+    % xfit = xfit(1:length(models),:);
 else
     xfit = cell(nmodel, nsession);
 end
 funcs = W.arrayfun(@(x)str2func(x), models);
 rng(0, 'twister');
-parfor gi = 1:nsession
+for gi = 1:nsession
     g = behs{gi};
     R = g.drop;
     D = g.delay;
@@ -23,7 +24,7 @@ parfor gi = 1:nsession
     for modeli = 1:nmodel
         md = feval(funcs{modeli});
         required_fields = [md.name_parameters, {'LL', 'AIC'}];
-        needs_fit = isempty(xfit{modeli, gi}) || ...
+        needs_fit = size(xfit, 1) < modeli || isempty(xfit{modeli, gi}) || ...
             ~isstruct(xfit{modeli, gi}) || ...
             ~all(isfield(xfit{modeli, gi}, required_fields)) || isoverwrite;
         if needs_fit
@@ -41,6 +42,7 @@ animals = ["S","T"];
 nanimal = length(animals);
 if exist(modelname, 'file')
     xfit = W.load(modelname);
+    % xfit = xfit(1:length(models),:);
 else
     xfit = cell(nmodel, nanimal);
 end
@@ -60,7 +62,7 @@ for ai = 1:nanimal
     for modeli = 1:nmodel
         md = feval(funcs{modeli});
         required_fields = [md.name_parameters, {'LL', 'AIC'}];
-        needs_fit = isempty(xfit{modeli, ai}) || ...
+        needs_fit = size(xfit, 1) < modeli || isempty(xfit{modeli, ai}) || ...
             ~isstruct(xfit{modeli, ai}) || ...
             ~all(isfield(xfit{modeli, ai}, required_fields)) || isoverwrite;
         if needs_fit

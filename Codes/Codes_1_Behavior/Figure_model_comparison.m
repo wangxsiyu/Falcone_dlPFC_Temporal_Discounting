@@ -1,8 +1,8 @@
 function Figure_model_comparison(plt, xfit, session)
 %FIGURE_MODEL_COMPARISON Compare session-level AIC across choice models.
 
-    model_names = ["Model 1", "Model 1t", "Model 2", ...
-        "Model 2t", "Model 3", "Model 3t"];
+    model_names = ["Model 1", "Model 1v", "Model 2", ...
+        "Model 2v", "Model 3", "Model 3v"];
     animals = ["S", "T"];
     n_models = numel(model_names);
     n_animals = numel(animals);

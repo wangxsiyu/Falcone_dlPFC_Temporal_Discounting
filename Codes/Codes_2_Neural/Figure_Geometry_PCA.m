@@ -1,5 +1,6 @@
 animalNames = string(plt.custom_vars.name_monkeys(1:2));
-analysisWindow = [-500 500];
+analysisWindow = [100 500];
+cue_or_go = cue;
 nConditions = 9;
 nComponents = 3;
 smoothingWidth = 5;
@@ -9,12 +10,12 @@ highValueColor = 'RSgreen';
 viewAngles = [-136.936071, 31.433679; ...
                -20.021, 18.2995];
 
-assert(numel(go) >= numel(animalNames), ...
-    'The GO data must contain both animals.');
+assert(numel(cue_or_go) >= numel(animalNames), ...
+    'The cue_or_go data must contain both animals.');
 
 drop = plt.custom_vars.drop;
 delay = plt.custom_vars.delay;
-timeat = go{1}.time_at;
+timeat = cue_or_go{1}.time_at;
 tid_pca = timeat >= 0 & timeat <= 1000;
 tid_display = timeat >= analysisWindow(1) & ...
     timeat <= analysisWindow(2);
@@ -22,9 +23,9 @@ tid_display = timeat >= analysisWindow(1) & ...
 pc = cell(1, 2);
 dvs = cell(1, 2);
 for ai = 1:2
-    cs = go{ai}.cells;
-    gs = W.arrayfun(@(x)go{ai}.games{x}, ...
-        go{ai}.info_cells.gameID)';
+    cs = cue_or_go{ai}.cells;
+    gs = W.arrayfun(@(x)cue_or_go{ai}.games{x}, ...
+        cue_or_go{ai}.info_cells.gameID)';
     nc = length(cs);
     av = cell(1, nc);
     dv = cell(1, nc);

@@ -1,14 +1,14 @@
 % Test whether the GO-cue Yellow/Purple population shift aligns with value.
 %
-% The coding axes are estimated from color-collapsed, offer-locked activity
-% and are then applied to independently GO-locked activity. Thus, the
-% Yellow/Purple contrast being tested does not define the axes. All axes
-% are oriented toward increasing drop, delay, or Model-1 discounted value.
+% Drop and delay axes are estimated from color-collapsed offer activity.
+% The value axis is estimated from pre-GO activity by main_value_axis.
+% The Yellow/Purple contrast does not define any coding axis.
 
 animalNames = string(plt.custom_vars.name_monkeys(1:2));
 axisNames = ["Drop", "Delay", "Value"];
 colorNames = ["Yellow", "Purple"];
-axisTrainingWindow = [0 750];       % ms relative to offer onset
+dropDelayTrainingWindow = [0 750];  % ms relative to offer onset
+valueAxisTrainingWindow = [-250 0]; % ms relative to GO onset
 baselineWindow = [-250 0];          % ms relative to GO onset
 summaryWindow = [0 500];            % ms relative to GO onset
 statisticsWindows = [-250 0; 0 250; 250 500; ...
@@ -21,12 +21,22 @@ axisColors = [0.25 0.55 0.80; 0.30 0.65 0.40; 0.35 0.35 0.35];
 
 assert(numel(cue) >= 2 && numel(go) >= 2, ...
     'Both offer- and GO-locked data must contain two animals.');
+valueAxis = W.load('../../TempData/value_axis');
+assert(isstruct(valueAxis) && all(isfield(valueAxis, ...
+    {'settings', 'animals'})), ...
+    'Run main_value_axis before main_YP.');
+assert(isequal(valueAxis.settings.training_window_ms, ...
+    valueAxisTrainingWindow) && ...
+    strcmp(valueAxis.settings.training_lock, 'GO cue onset'), ...
+    'The saved value axis uses a different training window.');
 rng(1, 'twister');
 
 YP = struct;
 YP.settings = struct( ...
-    'axis_training_lock', 'offer onset', ...
-    'axis_training_window_ms', axisTrainingWindow, ...
+    'drop_delay_axis_training_lock', 'offer onset', ...
+    'drop_delay_axis_training_window_ms', dropDelayTrainingWindow, ...
+    'value_axis_training_lock', valueAxis.settings.training_lock, ...
+    'value_axis_training_window_ms', valueAxisTrainingWindow, ...
     'projection_lock', 'GO cue onset', ...
     'baseline_window_ms', baselineWindow, ...
     'summary_window_ms', summaryWindow, ...
@@ -58,8 +68,15 @@ for animalIndex = 1:numel(animalNames)
         'No behaviorally shifted cues were found for %s.', ...
         animalNames(animalIndex));
 
-    [axesRaw, normalization] = estimateOfferAxes( ...
-        cueData, axisTrainingWindow);
+    valueResult = valueAxis.animals(animalIndex);
+    assert(isequal(valueResult.info_cells(:, {'animal', 'gameID'}), ...
+        cueData.info_cells(:, {'animal', 'gameID'})), ...
+        'The saved value axis and current offer data must contain ' + ...
+        "the same neurons in the same order.");
+    normalization = valueResult.normalization;
+    dropDelayAxesRaw = estimateOfferDropDelayAxes( ...
+        cueData, dropDelayTrainingWindow, normalization);
+    axesRaw = [dropDelayAxesRaw, valueResult.beta];
     axisNorms = vecnorm(axesRaw, 2, 1);
     assert(all(isfinite(axisNorms) & axisNorms > 0), ...
         'All population coding axes must have a finite nonzero norm.');
@@ -124,13 +141,14 @@ end
 W.save('../../TempData/YP_population_projection_GO', 'YP', YP);
 
 %% Figure 1: primary population-projection results
-plt.figure(3, 2, 'is_title', 'all', ...
+plt.figure(4, 2, 'is_title', 'all', ...
     'pixel_w', 440, 'pixel_h', 300, ...
     'gapW_custom', [0.7 0 1.2]);
 for animalIndex = 1:numel(animalNames)
     result = YP.animals(animalIndex);
     timeAt = result.time_at;
     selected = result.shifted_conditions;
+    nonSelected = setdiff(1:size(result.projection, 2), selected);
     projection = result.projection;
 
     % Absolute, baseline-corrected Yellow and Purple value projections.
@@ -153,8 +171,24 @@ for animalIndex = 1:numel(animalNames)
             'Location', 'northeast', 'Box', 'off');
     end
 
-    % Purple-minus-Yellow shift along all three coding axes.
+    % Yellow and Purple value projections for non-selected cues.
     plt.ax(2, animalIndex);
+    hold on;
+    yellowValue = reshape(projection(3, nonSelected, 1, :), ...
+        numel(nonSelected), numel(timeAt));
+    purpleValue = reshape(projection(3, nonSelected, 2, :), ...
+        numel(nonSelected), numel(timeAt));
+    plotMeanSem(timeAt, yellowValue, yellowColor);
+    plotMeanSem(timeAt, purpleValue, purpleColor);
+    addReferenceLines;
+    xlim([-250 1000]);
+    ylabel('Value-axis projection');
+    title(sprintf('%s: non-selected cues %s', ...
+        animalNames(animalIndex), ...
+        strjoin(string(nonSelected), ', ')));
+
+    % Purple-minus-Yellow shift along all three coding axes.
+    plt.ax(3, animalIndex);
     hold on;
     for axisIndex = 1:numel(axisNames)
         axisDifference = reshape(mean( ...
@@ -173,7 +207,7 @@ for animalIndex = 1:numel(animalNames)
     end
 
     % Across-cue correspondence between behavioral and neural shifts.
-    plt.ax(3, animalIndex);
+    plt.ax(4, animalIndex);
     hold on;
     behavior = result.behavior;
     x = behavior.delta_accept_purple_minus_yellow;
@@ -195,47 +229,8 @@ for animalIndex = 1:numel(animalNames)
         result.behavior_neural_spearman_r, ...
         result.behavior_neural_spearman_p));
 end
-plt.addABCs('ABCDEF');
+plt.addABCs('ABCDEFGH');
 plt.update('YP population projection GO');
-
-%% Figure 2: cue-specific Purple-minus-Yellow value shifts
-plt.figure(1, 2, 'is_title', 'all', ...
-    'pixel_w', 440, 'pixel_h', 330, ...
-    'gapW_custom', [0.7 0 1.2]);
-heatmapLimits = zeros(numel(animalNames), 1);
-for animalIndex = 1:numel(animalNames)
-    valueDifference = reshape( ...
-        YP.animals(animalIndex).projection(3, :, 2, :) - ...
-        YP.animals(animalIndex).projection(3, :, 1, :), ...
-        9, []);
-    heatmapLimits(animalIndex) = max(abs(valueDifference), [], 'all');
-end
-commonLimit = max(heatmapLimits);
-for animalIndex = 1:numel(animalNames)
-    plt.ax(1, animalIndex);
-    result = YP.animals(animalIndex);
-    valueDifference = reshape( ...
-        result.projection(3, :, 2, :) - ...
-        result.projection(3, :, 1, :), 9, []);
-    imagesc(result.time_at, 1:9, valueDifference);
-    set(gca, 'YDir', 'normal');
-    colormap(gca, blueWhiteRed(257));
-    clim([-commonLimit commonLimit]);
-    hold on;
-    xline(0, 'k--', 'LineWidth', 1);
-    behavior = result.behavior;
-    labels = string(compose('%d', behavior.condition));
-    labels(behavior.is_shifted) = labels(behavior.is_shifted) + " *";
-    yticks(1:9);
-    yticklabels(labels);
-    xlim([-250 1000]);
-    xlabel('Time from GO cue onset (ms)');
-    ylabel('Condition (* behavioral shift)');
-    title(animalNames(animalIndex));
-    colorbar;
-end
-plt.addABCs('AB');
-plt.update('YP value shift heatmap GO');
 
 
 function behavior = computeBehavioralShift(games)
@@ -272,36 +267,29 @@ function behavior = computeBehavioralShift(games)
     behavior.p_uncorrected = pUncorrected;
 end
 
-function [axesRaw, normalization] = estimateOfferAxes( ...
-        cueData, trainingWindow)
-%ESTIMATEOFFERAXES Learn color-collapsed coding axes from offer activity.
+function axesRaw = estimateOfferDropDelayAxes( ...
+        cueData, trainingWindow, normalization)
+%ESTIMATEOFFERDROPDELAYAXES Learn color-collapsed drop and delay axes.
     trainingMask = cueData.time_at >= trainingWindow(1) & ...
         cueData.time_at < trainingWindow(2);
     assert(any(trainingMask), ...
         'The offer-axis training window contains no samples.');
     nNeurons = numel(cueData.cells);
-    axesRaw = nan(nNeurons, 3);
-    normalization.mean = nan(nNeurons, 1);
-    normalization.std = nan(nNeurons, 1);
+    axesRaw = nan(nNeurons, 2);
 
     for neuronIndex = 1:nNeurons
         spikes = cueData.cells{neuronIndex};
         game = cueData.games{cueData.info_cells.gameID(neuronIndex)};
         assert(size(spikes, 1) == height(game), ...
             'Spike trials and behavioral trials must match.');
-        center = mean(spikes(:, trainingMask), 'all', 'omitnan');
-        scale = std(spikes(:, trainingMask), 0, 'all', 'omitnan');
-        if ~isfinite(scale) || scale <= eps
-            scale = 1;
-        end
-        normalization.mean(neuronIndex) = center;
-        normalization.std(neuronIndex) = scale;
+        center = normalization.mean(neuronIndex);
+        scale = normalization.std(neuronIndex);
 
         trialResponse = mean( ...
             (spikes(:, trainingMask) - center)/scale, ...
             2, 'omitnan');
         conditionInfo = unique(game(:, ...
-            {'condition', 'drop', 'delay', 'DV_overall'}), 'rows');
+            {'condition', 'drop', 'delay'}), 'rows');
         conditionInfo = sortrows(conditionInfo, 'condition');
         conditionResponse = arrayfun(@(condition)mean( ...
             trialResponse(game.condition == condition), 'omitnan'), ...
@@ -309,13 +297,9 @@ function [axesRaw, normalization] = estimateOfferAxes( ...
 
         drop = standardize(conditionInfo.drop);
         delay = standardize(conditionInfo.delay);
-        value = standardize(conditionInfo.DV_overall);
         dropDelayFit = [ones(height(conditionInfo), 1), ...
             drop, delay] \ conditionResponse;
-        valueFit = [ones(height(conditionInfo), 1), ...
-            value] \ conditionResponse;
-        axesRaw(neuronIndex, :) = ...
-            [dropDelayFit(2), dropDelayFit(3), valueFit(2)];
+        axesRaw(neuronIndex, :) = [dropDelayFit(2), dropDelayFit(3)];
     end
 end
 
@@ -455,19 +439,4 @@ function addReferenceLines
     xline(0, 'k--', 'LineWidth', 1);
     yline(0, ':', 'Color', [0.5 0.5 0.5]);
     xlabel('Time from GO cue onset (ms)');
-end
-
-function colors = blueWhiteRed(nColors)
-%BLUEWHITERED Create a diverging blue-white-red colormap.
-    if nargin < 1
-        nColors = 257;
-    end
-    half = ceil(nColors/2);
-    blueToWhite = [linspace(0.15, 1, half)', ...
-        linspace(0.35, 1, half)', ones(half, 1)];
-    whiteToRed = [ones(half, 1), ...
-        linspace(1, 0.20, half)', ...
-        linspace(1, 0.20, half)'];
-    colors = [blueToWhite; whiteToRed(2:end, :)];
-    colors = colors(round(linspace(1, size(colors, 1), nColors)), :);
 end

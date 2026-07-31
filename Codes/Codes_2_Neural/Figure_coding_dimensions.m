@@ -25,7 +25,7 @@ function Figure_coding_dimensions(plt, codingname, nplot)
     for animali = 1:n_animals
         for windowi = 1:nplot
             if nplot == 1
-                windowi = 5;
+                windowi = 1;
                 plt.ax(animali);
             else
                 plt.ax(animali, windowi);

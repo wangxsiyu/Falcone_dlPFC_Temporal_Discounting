@@ -3,8 +3,8 @@ function Figure_model_posteriorchecks(plt, games_all, model_fits)
 
     drop = double(plt.custom_vars.drop(:)');
     delay = double(plt.custom_vars.delay(:)');
-    model_names = ["Model 1", "Model 1t", "Model 2", ...
-        "Model 2t", "Model 3", "Model 3t"];
+    model_names = ["Model 1", "Model 1v", "Model 2", ...
+        "Model 2v", "Model 3", "Model 3v"];
     model_classes = {'Model1', 'Model1t', 'Model2', ...
         'Model2t', 'Model3', 'Model3t'};
     delay_levels = [1 5 10];
@@ -201,7 +201,8 @@ function Figure_model_posteriorchecks(plt, games_all, model_fits)
         'Monkey S', [1 2], group_title_fontsize));
     plt.matlab(@()add_group_title( ...
         'Monkey T', [3 4], group_title_fontsize));
-    plt.addABCs('ABGHCDIJEFKL')
+    % plt.addABCs('ABGHCDIJEFKL')
+    plt.addABCs('CDIJEFKLGHMN')
     plt.update('behavior_inferred_value');
     plt.param_plt.fontsize_leg = original_legend_fontsize;
 end

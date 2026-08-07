@@ -1,1 +1,1 @@
-W_version_archived('1.1')
+W_version('auto')

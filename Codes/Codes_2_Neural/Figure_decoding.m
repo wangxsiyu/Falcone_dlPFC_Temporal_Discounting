@@ -14,15 +14,18 @@ for ai = 1:2
         plt.plot(timeat, av, se, 'shade', 'color', plt.custom_vars.color_anova{i});
         plt.dashX(chance(i));
         plt.dashY(0, [0 1]);
-        plt.setfig_ax('xlabel', 'time (ms)', 'ylabel', 'decoding accuracy', 'title', tlt{ai}, ...
+        plt.setfig_ax('ylabel', 'decoding accuracy', ...
             'xlim', [-500 1000]);
+        if i == 1
+            plt.setfig_ax('title', tlt{ai});
+        end
         if i == 3
             [av1, se1] = W.avse(r{1}.*r{2});
             [p] = W.stat_ttest(r{1}.*r{2}, r{3});
             tid = find(timeat > -500 & timeat < 1000);
             plt.plot(timeat, av1, se1, 'shade', 'color', 'black');
             plt.sigstar(timeat(tid), av(tid) + se(tid) + 0.01, p(tid), 'dx', 25)
-            plt.setfig_ax('legend', {'data','independence'}, 'ylim', [0 1]);
+            plt.setfig_ax('xlabel', 'time (ms)', 'legend', {'data','independence'}, 'ylim', [0 1]);
         else
             plt.setfig_ax('ylim', [0 1]);
         end
@@ -33,6 +36,7 @@ for axi = 1:6
     plt.ax(axi);
     plt.matlabax(@(~)add_offer_onset_label());
 end
+plt.addABCs('ABCDEF')
 plt.update('decode');
 
 function add_offer_onset_label()
@@ -65,8 +69,8 @@ function add_offer_onset_label()
 
     x_label = ax.XLabel;
     x_label.Units = 'normalized';
-    x_label_position = x_label.Position;
-    x_label_position(1) = 1;
-    x_label.Position = x_label_position;
-    x_label.HorizontalAlignment = 'right';
+    % x_label_position = x_label.Position;
+    % x_label_position(1) = 1;
+    % x_label.Position = x_label_position;
+    % x_label.HorizontalAlignment = 'right';
 end

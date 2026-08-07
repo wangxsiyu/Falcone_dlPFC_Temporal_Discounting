@@ -24,7 +24,7 @@ function Figure_behavior_purpleyellow(plt, games_all)
         av = [c1.avCHOICE(i,:); c2.avCHOICE(i,:)];
         se = [c1.seCHOICE(i,:); c2.seCHOICE(i,:)];
         [~, tid] = sort(c0.avCHOICE(i, :));
-        plt.plot(1:length(tid), av(:, tid), se(:, tid), 'bar', 'color', {'yellow','magenta'});
+        plt.plot(1:length(tid), av(:, tid), se(:, tid), 'bar', 'color', plt.custom_vars.color_yellowpurple);
         plt.sigstar(1:length(tid), mean(av(:, tid)), ps(i,tid))
         plt.setfig_ax('xlabel', '', 'ylabel', 'Acceptance Rate (%)', ...
             'xlim', [0 10], 'xtick', 1:9, ...

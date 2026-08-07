@@ -1,6 +1,7 @@
 savedir: '../Figures'
 custom_vars:
     name_monkeys: [Monkey S, Monkey T]
+    color_yellowpurple: ["RSyellow", "RSpurple"]
     color_anova: [AZred, AZblue, AZcactus, AZsand, AZsky, AZbrick]
     drop: [2, 2, 2, 4, 4, 4, 6, 6, 6]
     delay: [1, 5, 10, 1, 5, 10, 1, 5, 10]

@@ -1,10 +1,13 @@
 %%
+run('../W_setup.m')
 isoverwrite = false;
 main_1_fitRL;
 %%
 main_2_computeDV;
 %%
 plt = SW_plt_from_yml('../fig.yml');
+plt.S_colors.RSpurple = [0.55 0.25 0.72];
+plt.S_colors.RSyellow = [0.90 0.65 0.05];
 data = W.load('../../TempData/data');
 session = data.cue{1}.info_session.info_combinedsessions;
 games = data.cue{1}.games;
@@ -23,3 +26,5 @@ Figure_model_comparison(plt, xfit, session);
 Figure_model_parameters(plt, xfit, session);
 %% Figure model posterior checks
 Figure_model_posteriorchecks(plt, games_all, xfit_all);
+%% Seam behavioral changes
+Figure_Seam_training;

@@ -20,11 +20,11 @@ SW_fig(plt, anv{1}, anv{2}, 'axes', 'ax_slidingwindow_ANOVA','ax_slidingwindow_A
 
 for axi = 1:4
     plt.ax(axi);
-    plt.matlabax(@(~)add_offer_onset_label());
+    plt.matlabax(@(~)add_offer_onset_label(axi));
 end
 plt.update('anovaGO');
 
-function add_offer_onset_label()
+function add_offer_onset_label(axi)
 %ADD_OFFER_ONSET_LABEL Mark time zero below the current x-axis.
     ax = gca;
     x_limits = xlim(ax);
@@ -52,9 +52,15 @@ function add_offer_onset_label()
         'FontSize', max(ax.FontSize - 2, 8), ...
         'Clipping', 'off');
 
-    x_label = ax.XLabel;
-    x_label_position = x_label.Position;
-    x_label_position(1) = x_limits(2);
-    x_label.Position = x_label_position;
-    x_label.HorizontalAlignment = 'right';
+    if axi <= 2
+        x_label = ax.XLabel;
+        x_label_position = x_label.Position;
+        x_label_position(2) = x_label_position(2) - 0.005;
+        x_label.Position = x_label_position;
+    else
+        x_label = ax.XLabel;
+        x_label_position = x_label.Position;
+        x_label_position(2) = x_label_position(2) - 0.0005;
+        x_label.Position = x_label_position;
+    end
 end

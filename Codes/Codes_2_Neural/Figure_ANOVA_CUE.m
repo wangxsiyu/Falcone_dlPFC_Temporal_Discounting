@@ -1,8 +1,6 @@
 %% Figure - baseline
 drop = plt.custom_vars.drop;
 delay = plt.custom_vars.delay;
-timeat = cue{1}.time_at;
-ntime = length(timeat);
 tlt = plt.custom_vars.name_monkeys;
 anv = W.load('../../TempData/anv_drop_delay_interaction_choice');
 SW_fig(plt, anv{1}, anv{2}, ...
@@ -22,11 +20,11 @@ SW_fig(plt, anv{1}, anv{2}, ...
 
 for axi = 1:4
     plt.ax(axi);
-    plt.matlabax(@(~)add_offer_onset_label());
+    plt.matlabax(@(~)add_offer_onset_label(axi));
 end
 plt.update('ANOVA_drop_delay_interaction_choice');
 
-function add_offer_onset_label()
+function add_offer_onset_label(axi)
 %ADD_OFFER_ONSET_LABEL Mark time zero below the current x-axis.
     ax = gca;
     x_limits = xlim(ax);
@@ -54,9 +52,16 @@ function add_offer_onset_label()
         'FontSize', max(ax.FontSize - 2, 8), ...
         'Clipping', 'off');
 
-    x_label = ax.XLabel;
-    x_label_position = x_label.Position;
-    x_label_position(1) = x_limits(2);
-    x_label.Position = x_label_position;
-    x_label.HorizontalAlignment = 'right';
+    if axi <= 2
+        x_label = ax.XLabel;
+        x_label_position = x_label.Position;
+        x_label_position(2) = x_label_position(2) - 0.005;
+        x_label.Position = x_label_position;
+    else
+        x_label = ax.XLabel;
+        x_label_position = x_label.Position;
+        x_label_position(2) = x_label_position(2) - 0.0005;
+        x_label.Position = x_label_position;
+    end
+    % x_label.HorizontalAlignment = 'right';
 end

@@ -1,3 +1,4 @@
+run('../W_setup.m')
 savedir = W.mkdir('../../Data');
 %% get lists
 textdir = '../../lPFC_DATA/FOR_DECODING/SEAM_list_channels_and_events_all.txt';

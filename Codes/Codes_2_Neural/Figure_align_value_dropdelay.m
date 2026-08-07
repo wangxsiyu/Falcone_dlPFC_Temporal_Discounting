@@ -1,14 +1,13 @@
-axis_value = W.load('../../TempData/value_axis');
+axis_value = W.load('../../TempData/axes_valueGO');
 axis_dropdelay = W.load('../../TempData/coding_dimensions_GO');
-yp = W.load('../../TempData/projections_YP');
+yp = W.load('../../TempData/proj_valueGO1');
 c0 = W.cellfun_vertcat(@(g)W.cond_average_tab(g, 'condition', {'choice', 'DV_overall'}), games_all);
-
 %%
-n_animals = numel(axis_value.animals);
+n_animals = 2;
 animal_names = string(plt.custom_vars.name_monkeys(1:n_animals));
 nplot = 1;
 gap_w = [1.5, zeros(1, 2 - 1), 0];
-gap_h = [1.5, 0, 0, 0];
+gap_h = [1.5,  0, 0, 0];
 plt.figure(3, 2, 'is_title', 'all', ...
     'pixel_w', 250, 'pixel_h', 250, ...
     'gapW_custom', gap_w, 'gapH_custom', gap_h);
@@ -21,7 +20,7 @@ for animali = 1:n_animals
         delay_axis = mean([ ...
             fold_results.beta_delay1(:, windowi), ...
             fold_results.beta_delay2(:, windowi)], 2);
-        value_axis = axis_value.animals(animali).axis_unit;
+        value_axis = axis_value{animali}.value;
         valid_neuron = isfinite(drop_axis) & isfinite(delay_axis);
         drop_axis = drop_axis(valid_neuron);
         delay_axis = delay_axis(valid_neuron);
@@ -66,30 +65,30 @@ for animali = 1:n_animals
         plt.ax(3, animali);
         [~, ttid] = sort(c0.avCHOICE(animalIndex, :));
         x = c0.avDV_OVERALL(animalIndex, ttid);
-        bp = yp.basePs{animali};
+        bp = yp{animali}.vals{1};
         % y = squeeze(bp(1,ttid, 1, 1));
 
         softmaxType = fittype('d + c/(1 + exp(b + k*x))', 'independent', 'x');
-        y = squeeze((bp(1,ttid, 1, 1)+bp(1,ttid, 2, 1))/2);
+        y = squeeze((bp(1,ttid, 1)+bp(1,ttid, 2))/2);
         % y = squeeze(bp(1,ttid, 1, 2));
         [fitResult, gof] = fit(x', y', softmaxType, 'StartPoint', [0 0 0 0]);
         plt.scatter(x, y, 'dot', 'color', 'black');
         xs = min(x):0.01:max(x);
-        plt.plot(xs, fitResult(xs)', [], 'line', 'color', 'black');
+        plt.plot(xs, fitResult(xs)', [], 'line', 'linestyle', '--', 'color', 'gray');
 
-        y = squeeze(bp(1,ttid, 1, 2));
-        [fitResult, gof] = fit(x', y', softmaxType, 'StartPoint', [0 0 0 0]);
-        plt.scatter(x, y, 'dot', 'color', yellowColor);
-        xs = min(x):0.01:max(x);
-        plt.plot(xs, fitResult(xs)', [], 'line', 'color', yellowColor);
+        % y = squeeze(bp(1,ttid, 1, 2));
+        % [fitResult, gof] = fit(x', y', softmaxType, 'StartPoint', [0 0 0 0]);
+        % plt.scatter(x, y, 'dot', 'color', yellowColor);
+        % xs = min(x):0.01:max(x);
+        % plt.plot(xs, fitResult(xs)', [], 'line', 'color', yellowColor);
+        % 
+        % y = squeeze(bp(1,ttid, 2, 2));
+        % [fitResult, gof] = fit(x', y', softmaxType, 'StartPoint', [0 0 0 0]);
+        % plt.scatter(x, y, 'dot', 'color', purpleColor);
+        % xs = min(x):0.01:max(x);
+        % plt.plot(xs, fitResult(xs)', [], 'line', 'color', purpleColor);
 
-        y = squeeze(bp(1,ttid, 2, 2));
-        [fitResult, gof] = fit(x', y', softmaxType, 'StartPoint', [0 0 0 0]);
-        plt.scatter(x, y, 'dot', 'color', purpleColor);
-        xs = min(x):0.01:max(x);
-        plt.plot(xs, fitResult(xs)', [], 'line', 'color', purpleColor);
-       
-        plt.setfig_ax('xlabel', 'DV', 'ylabel', {'Population activity on', 'value dimension'});
+        plt.setfig_ax('xlabel', 'Discounted value', 'ylabel', {'Value-axis projection'});
     end
 end
 plt.addABCs('ABCDEF');

@@ -1,3 +1,4 @@
+run('../W_setup.m')
 looper = S_looper_folder('../../Data/');
 jobs = S_jobs();
 jobs.set_loopers({'folder'}, {looper});
@@ -37,14 +38,30 @@ jobs.add_jobs_with_looper_folder([], 'W.select_trials_cellgame', ...
     {'ST_go'}, 'inputfunc', @(ev, g){ev, g, g.is_complete & ~g.is_post_error});
 jobs.add_jobs_with_looper_folder({'all', 'all'}, 'W.format_combinecells_and_games', ...
     {'ST_go', 'games_go'}, {}, 'ST_go_all');
+%% 2nd go period
+jobs.add_jobs_with_looper_folder([], 'W.epoch_spikebinning_by_marker', ...
+    {'spikes', 'trials'}, {[1038 1121], 2, -600:10:1100, 100}, 'epoch_go2_600_1100');
+jobs.add_jobs_with_looper_folder([], 'W.select_trials_cellgame', ...
+    {'epoch_go2_600_1100','games'},  {}, ...
+    {'EPOCH_go2','games_go2'}, 'inputfunc', @(ev, g){ev, g, g.is_complete & ~g.is_post_error});
+jobs.add_jobs_with_looper_folder({'all', 'all'}, 'W.format_combinecells_and_games', ...
+    {'EPOCH_go2', 'games_go2'}, {}, 'go2_all');
+jobs.add_jobs_with_looper_folder([], 'W.epoch_spiketrains_by_marker', ...
+    {'spikes', 'trials'}, {[1038 1121], 2, -600, 1100, 1}, 'epoch_st_go2_600_1000');
+jobs.add_jobs_with_looper_folder([], 'W.select_trials_cellgame', ...
+    {'epoch_st_go2_600_1000','games'},  {}, ...
+    {'ST_go2'}, 'inputfunc', @(ev, g){ev, g, g.is_complete & ~g.is_post_error});
+jobs.add_jobs_with_looper_folder({'all', 'all'}, 'W.format_combinecells_and_games', ...
+    {'ST_go2', 'games_go2'}, {}, 'ST_go2_all');
 %%
 jobs.parfor_off;
 jobs.overwrite_off;
 jobs.run()
 %% merge ST and EPOCH
-data = looper.looper_loadmix({'ST_cue_all','ST_go_all','cue_all', 'go_all'}, 'struct');
+data = looper.looper_loadmix({'ST_cue_all','ST_go_all','cue_all', 'go_all', 'ST_go2_all', 'go2_all'}, 'struct');
 assert(isequal(data.cue_all.info_cells, data.ST_cue_all.info_cells));
 assert(isequal(data.go_all.info_cells, data.ST_go_all.info_cells));
+assert(isequal(data.go2_all.info_cells, data.ST_go2_all.info_cells));
 cue = data.ST_cue_all;
 cue.ST = cue.cells;
 cue.cells = data.cue_all.cells;
@@ -55,6 +72,11 @@ go.ST = go.cells;
 go.cells = data.go_all.cells;
 go = W.struct_merge(go, data.go_all, 'ignore');
 looper.looper_save_master(go, 'go');
+go2 = data.ST_go2_all;
+go2.ST = go2.cells;
+go2.cells = data.go2_all.cells;
+go2 = W.struct_merge(go2, data.go2_all, 'ignore');
+looper.looper_save_master(go2, 'go2');
 
 
 

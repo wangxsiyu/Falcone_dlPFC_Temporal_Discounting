@@ -1,5 +1,5 @@
 %% Estimate the post-offer Model 1 value-coding axis
-trainingWindows = {[-250 0],[0 250],[250 500],[500 750],[750 1000], [850 1100], [1100 1250], [1250 1400]};
+trainingWindows = {[-250 0],[0 250],[250 500],[500 750],[750 1000], [850 1100]};
 factorNames = {'DV_overall'};
 animalNames = ["Monkey S", "Monkey T"];
 

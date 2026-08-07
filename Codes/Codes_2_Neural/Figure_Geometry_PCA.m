@@ -1,6 +1,6 @@
 animalNames = string(plt.custom_vars.name_monkeys(1:2));
-analysisWindow = [100 500];
-cue_or_go = cue;
+analysisWindow = {[-250 500]};
+cue_or_go = {go};
 nConditions = 9;
 nComponents = 3;
 smoothingWidth = 5;
@@ -10,50 +10,51 @@ highValueColor = 'RSgreen';
 viewAngles = [-136.936071, 31.433679; ...
                -20.021, 18.2995];
 
-assert(numel(cue_or_go) >= numel(animalNames), ...
-    'The cue_or_go data must contain both animals.');
+% assert(numel(cue_or_go) >= numel(animalNames), ...
+%     'The cue_or_go data must contain both animals.');
 
 drop = plt.custom_vars.drop;
 delay = plt.custom_vars.delay;
-timeat = cue_or_go{1}.time_at;
-tid_pca = timeat >= 0 & timeat <= 1000;
-tid_display = timeat >= analysisWindow(1) & ...
-    timeat <= analysisWindow(2);
+timeat = cue_or_go{1}{1}.time_at;
 %% compute population trajectory
 pc = cell(1, 2);
 dvs = cell(1, 2);
-for ai = 1:2
-    cs = cue_or_go{ai}.cells;
-    gs = W.arrayfun(@(x)cue_or_go{ai}.games{x}, ...
-        cue_or_go{ai}.info_cells.gameID)';
-    nc = length(cs);
-    av = cell(1, nc);
-    dv = cell(1, nc);
-    for ci = 1:nc
-        c = cs{ci};
-        g = gs{ci};
-        assert(ismember('DV_overall', ...
-            g.Properties.VariableNames), ...
-            'Run the behavioral DV computation before this figure.');
-        av{ci} = W.cond_average( ...
-            c, g.condition, 1:nConditions);
-        dv{ci} = W.cond_average( ...
-            g.DV_overall, g.condition, 1:nConditions);
+for windowi = 1:1
+    for ai = 1:2
+        cs = cue_or_go{windowi}{ai}.cells;
+        gs = W.arrayfun(@(x)cue_or_go{windowi}{ai}.games{x}, ...
+            cue_or_go{windowi}{ai}.info_cells.gameID)';
+        nc = length(cs);
+        av = cell(1, nc);
+        dv = cell(1, nc);
+        for ci = 1:nc
+            c = cs{ci};
+            g = gs{ci};
+            assert(ismember('DV_overall', ...
+                g.Properties.VariableNames), ...
+                'Run the behavioral DV computation before this figure.');
+            av{ci} = W.cond_average( ...
+                c, g.condition, 1:nConditions);
+            dv{ci} = W.cond_average( ...
+                g.DV_overall, g.condition, 1:nConditions);
+        end
+        dvs{ai} = mean(vertcat(dv{:}));
+
+        % Find population activity for each condition.
+        pp = W.cell_transpose(W.cell_NxMK2KxMN( ...
+            W.cell_transpose(av)));
+
+        % tid_pca = timeat >= analysisWindow{windowi}(1) & timeat <= analysisWindow{windowi}(2);
+        tid_pca = timeat >= 0 & timeat <= 1000;
+        % Find PCA space from the unsmoothed mean trajectories.
+        tpp = W.cellfun(@(x)x(:, tid_pca), pp);
+        alld = horzcat(tpp{:});
+        pcinfo = W.pca(alld');
+
+        % Project the unsmoothed full trajectories into the PCA space.
+        pc{ai, windowi} = W.cellfun(@(x) ...
+            W.pca_project(pcinfo, x', 10), pp);
     end
-    dvs{ai} = mean(vertcat(dv{:}));
-
-    % Find population activity for each condition.
-    pp = W.cell_transpose(W.cell_NxMK2KxMN( ...
-        W.cell_transpose(av)));
-
-    % Find PCA space from the unsmoothed mean trajectories.
-    tpp = W.cellfun(@(x)x(:, tid_pca), pp);
-    alld = horzcat(tpp{:});
-    pcinfo = W.pca(alld');
-
-    % Project the unsmoothed full trajectories into the PCA space.
-    pc{ai} = W.cellfun(@(x) ...
-        W.pca_project(pcinfo, x', 10), pp);
 end
 
 % Use Monkey T's DV ordering and color scale for both animals.
@@ -73,33 +74,37 @@ plt.figure(1, 2, 'is_title', 'all', ...
     'gapW_custom', [0.7 0 5]);
 pcaAxes = gobjects(numel(animalNames), 1);
 for animalIndex = 1:numel(animalNames)
-    plt.ax(1, animalIndex);
-    pcaAxes(animalIndex) = gca;
-    x = cell(1, nComponents);
-    for componentIndex = 1:nComponents
-        x{componentIndex} = W.cellfun_vertcat(@(x) ...
-            W.smooth1d([], ...
-            x(tid_display, componentIndex)', smoothingWidth), ...
-            pc{animalIndex});
-    end
-    plt.plot3(x{1}, x{2}, x{3}, ...
-        'color', conditionColors);
+    for windowi = 1:1
+        tid_display = timeat >= analysisWindow{windowi}(1) & timeat <= analysisWindow{windowi}(2);
 
-    xlabel('PC1');
-    ylabel('PC2');
-    zlabel('PC3');
-    title(animalNames(animalIndex));
-    text(-0.15, 1.08, char('A' + animalIndex - 1), ...
-        'Units', 'normalized', ...
-        'FontSize', gca().FontSize + 5, ...
-        'HorizontalAlignment', 'left', ...
-        'VerticalAlignment', 'bottom', ...
-        'Clipping', 'off');
-    view(viewAngles(animalIndex, :));
-    grid off;
-    box off;
-    axis vis3d;
-    set(gca, 'Color', 'none');
+        plt.ax(windowi, animalIndex);
+        pcaAxes(animalIndex) = gca;
+        x = cell(1, nComponents);
+        for componentIndex = 1:nComponents
+            x{componentIndex} = W.cellfun_vertcat(@(x) ...
+                W.smooth1d([], ...
+                x(tid_display, componentIndex)', smoothingWidth), ...
+                pc{animalIndex, windowi});
+        end
+        plt.plot3(x{1}, x{2}, x{3}, ...
+            'color', conditionColors);
+
+        xlabel('PC1');
+        ylabel('PC2');
+        zlabel('PC3');
+        title(animalNames(animalIndex));
+        text(-0.15, 1.08, char('A' + animalIndex - 1), ...
+            'Units', 'normalized', ...
+            'FontSize', gca().FontSize + 5, ...
+            'HorizontalAlignment', 'left', ...
+            'VerticalAlignment', 'bottom', ...
+            'Clipping', 'off');
+        view(viewAngles(animalIndex, :));
+        grid off;
+        box off;
+        axis vis3d;
+        set(gca, 'Color', 'none');
+    end
 end
 
 % Put the shared legend in a small independent axes immediately to the

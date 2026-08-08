@@ -1,5 +1,5 @@
 results = W.load('../../TempData/decoding');
-plt.figure(3,2, 'is_title', 'all')
+plt.figure(3,2, 'is_title', 'all', 'gapH_custom', [0 0 0 0.5]);
 for ai = 1:2
     r0 = results{ai};
     r = cell(1,3);
@@ -8,6 +8,7 @@ for ai = 1:2
     r{3} = W.cellfun_vertcat(@(x)x.r_interaction.ac_decode, r0);
     chance = [1/3, 1/3, 1/9];
 %     tlt = {'drop', 'delay', 'Drop x Delay'};
+    legs = {'Drop', 'Delay'};
     for i = 1:3
         plt.ax(i, ai);
         [av, se] = W.avse(r{i});
@@ -25,9 +26,9 @@ for ai = 1:2
             tid = find(timeat > -500 & timeat < 1000);
             plt.plot(timeat, av1, se1, 'shade', 'color', 'black');
             plt.sigstar(timeat(tid), av(tid) + se(tid) + 0.01, p(tid), 'dx', 25)
-            plt.setfig_ax('xlabel', 'time (ms)', 'legend', {'data','independence'}, 'ylim', [0 1]);
+            plt.setfig_ax('xlabel', 'time (ms)', 'legend', {'Drop x Delay (data)','Drop x Delay (independence)'}, 'ylim', [0 1]);
         else
-            plt.setfig_ax('ylim', [0 1]);
+            plt.setfig_ax('ylim', [0 1], 'legend', legs{i});
         end
     end
 end
@@ -69,8 +70,8 @@ function add_offer_onset_label()
 
     x_label = ax.XLabel;
     x_label.Units = 'normalized';
-    % x_label_position = x_label.Position;
-    % x_label_position(1) = 1;
-    % x_label.Position = x_label_position;
+    x_label_position = x_label.Position;
+    x_label_position(2) = x_label_position(2) - 0.000;
+    x_label.Position = x_label_position;
     % x_label.HorizontalAlignment = 'right';
 end
